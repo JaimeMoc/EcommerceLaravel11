@@ -1,10 +1,11 @@
 <?php
 
 use App\Http\Controllers\ProfileController;
+use App\Http\Controllers\ProductController;
+use App\Http\Controllers\CategoryController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
-use App\Http\Controllers\ProductController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -27,7 +28,10 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::resource('products', ProductController::class)
-        ->only(['index', 'create', 'store']);
+        ->only(['index', 'create', 'store', 'edit', 'update', 'destroy']);
+
+    Route::resource('categories', CategoryController::class)
+        ->only(['index', 'store']);
 
     Route::get('/admin-test', function () {
         return 'Solo admins';

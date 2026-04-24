@@ -5,6 +5,13 @@ Proyecto académico de un **sistema de comercio electrónico básico**, desarrol
 Este proyecto forma parte de una práctica escolar cuyo objetivo es consolidar conocimientos en frameworks modernos, arquitectura MVC, autenticación, autorización y pruebas automatizadas.
 
 ---
+## Nombre de los integrantes
+
+- Anahí Gutierrez Dominguez (21270290)
+- Brandon Suarez Marroquín (21271215)
+- Jaime Alberto Suarez Moctezuma (22270014)
+
+---
 
 ## 🎯 Objetivo del Proyecto
 

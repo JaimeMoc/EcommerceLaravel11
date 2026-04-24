@@ -3,66 +3,74 @@
 namespace App\Http\Controllers;
 
 use App\Models\Product;
-use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CartController extends Controller
 {
-    public function index(Request $request)
+    public function index(): Response
     {
-        $cart = $request->session()->get('cart', []);
+        $items = array_values(session()->get('cart', []));
 
-        $items = [];
-        $total = 0;
-
-        foreach ($cart as $productId => $quantity) {
-            $product = Product::find($productId);
-
-            if (!$product) {
-                continue;
-            }
-
-            $subtotal = $product->price * $quantity;
-            $total += $subtotal;
-
-            $items[] = [
-                'id' => $product->id,
-                'name' => $product->name,
-                'price' => $product->price,
-                'quantity' => $quantity,
-                'subtotal' => $subtotal,
-            ];
-        }
+        $total = array_reduce($items, function (float $carry, array $item): float {
+            return $carry + (float) $item['subtotal'];
+        }, 0.0);
 
         return Inertia::render('Cart/Index', [
             'items' => $items,
             'total' => $total,
+            'success' => session('success'),
+            'error' => session('error'),
         ]);
     }
 
-    public function add(Request $request, Product $product)
+    public function add(Product $product): RedirectResponse
     {
-        $cart = $request->session()->get('cart', []);
+        $cart = session()->get('cart', []);
+        $productId = (string) $product->id;
 
-        if (!isset($cart[$product->id])) {
-            $cart[$product->id] = 0;
+        if (isset($cart[$productId])) {
+            $cart[$productId]['quantity']++;
+            $cart[$productId]['subtotal'] = $cart[$productId]['quantity'] * (float) $cart[$productId]['price'];
+        } else {
+            $cart[$productId] = [
+                'id' => $product->id,
+                'name' => $product->name,
+                'price' => (float) $product->price,
+                'quantity' => 1,
+                'subtotal' => (float) $product->price,
+                'image' => $product->image,
+            ];
         }
 
-        $cart[$product->id]++;
+        session()->put('cart', $cart);
 
-        $request->session()->put('cart', $cart);
-
-        return redirect()->back();
+        return redirect()->back()->with('success', 'Producto agregado al carrito.');
     }
 
-    public function remove(Request $request, Product $product)
+    public function remove(int $productId): RedirectResponse
     {
-        $cart = $request->session()->get('cart', []);
+        $cart = session()->get('cart', []);
 
-        unset($cart[$product->id]);
+        if (isset($cart[$productId])) {
+            unset($cart[$productId]);
+            session()->put('cart', $cart);
 
-        $request->session()->put('cart', $cart);
+            return redirect()->back()->with('success', 'Producto eliminado del carrito.');
+        }
 
-        return redirect()->back();
+        return redirect()->back()->with('error', 'El producto no existe en el carrito.');
+    }
+
+    public function checkout(): RedirectResponse
+    {
+        if (empty(session()->get('cart', []))) {
+            return redirect()->route('cart.index')->with('error', 'El carrito está vacío.');
+        }
+
+        session()->forget('cart');
+
+        return redirect()->route('cart.index')->with('success', 'Compra realizada con éxito.');
     }
 }

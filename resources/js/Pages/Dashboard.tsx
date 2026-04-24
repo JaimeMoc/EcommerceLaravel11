@@ -1,5 +1,5 @@
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, Link, usePage } from '@inertiajs/react';
+import { Head, Link, router, usePage } from '@inertiajs/react';
 
 type Product = {
     id: number;
@@ -48,12 +48,20 @@ export default function Dashboard() {
                             <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-100">
                                 Productos destacados
                             </h3>
-                            <Link
-                                href="/products"
-                                className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-100"
-                            >
-                                Ver todos
-                            </Link>
+                            <div className="flex items-center gap-2">
+                                <Link
+                                    href="/cart"
+                                    className="rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 transition hover:bg-slate-100 dark:border-slate-600 dark:bg-slate-800 dark:text-slate-100 dark:hover:bg-slate-700"
+                                >
+                                    Ver carrito
+                                </Link>
+                                <Link
+                                    href="/products"
+                                    className="rounded-lg bg-slate-800 px-4 py-2 text-sm font-medium text-white transition hover:bg-slate-700 dark:bg-slate-200 dark:text-slate-900 dark:hover:bg-slate-100"
+                                >
+                                    Ver todos
+                                </Link>
+                            </div>
                         </div>
 
                         {products.length > 0 ? (
@@ -96,6 +104,7 @@ export default function Dashboard() {
                                                 </Link>
                                                 <button
                                                     type="button"
+                                                    onClick={() => router.post(`/cart/add/${product.id}`)}
                                                     className="rounded-md bg-emerald-600 px-3 py-2 text-sm font-medium text-white transition hover:bg-emerald-500"
                                                 >
                                                     Agregar al carrito

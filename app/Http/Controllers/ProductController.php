@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Product;
 use App\Models\Category;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
@@ -26,20 +27,22 @@ class ProductController extends Controller
 
     public function store(Request $request)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'nullable|image|max:2048',
-        ]);
+        $data = $request->validate(Product::validationRules());
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('products', 'public');
         }
 
-        Product::create($data);
+        $product = Product::create($data);
+
+        Log::info('audit.product_created', [
+            'action' => 'product_created',
+            'user_id' => $request->user()?->id,
+            'product_id' => $product->id,
+            'previous_price' => null,
+            'new_price' => $product->price,
+            'occurred_at' => now()->toDateTimeString(),
+        ]);
 
         return redirect()->route('products.index');
     }
@@ -54,14 +57,8 @@ class ProductController extends Controller
 
     public function update(Request $request, Product $product)
     {
-        $data = $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'price' => 'required|numeric|min:0',
-            'stock' => 'required|integer|min:0',
-            'category_id' => 'required|exists:categories,id',
-            'image' => 'nullable|image|max:2048',
-        ]);
+        $previousPrice = $product->price;
+        $data = $request->validate(Product::validationRules());
 
         if ($request->hasFile('image')) {
             if ($product->image) {
@@ -73,16 +70,47 @@ class ProductController extends Controller
 
         $product->update($data);
 
+        if ((string) $previousPrice !== (string) $product->price) {
+            Log::info('audit.product_price_changed', [
+                'action' => 'product_price_changed',
+                'user_id' => $request->user()?->id,
+                'product_id' => $product->id,
+                'previous_price' => $previousPrice,
+                'new_price' => $product->price,
+                'occurred_at' => now()->toDateTimeString(),
+            ]);
+        }
+
+        Log::info('audit.product_updated', [
+            'action' => 'product_updated',
+            'user_id' => $request->user()?->id,
+            'product_id' => $product->id,
+            'previous_price' => $previousPrice,
+            'new_price' => $product->price,
+            'occurred_at' => now()->toDateTimeString(),
+        ]);
+
         return redirect()->route('products.index');
     }
 
-    public function destroy(Product $product)
+    public function destroy(Request $request, Product $product)
     {
+        $previousPrice = $product->price;
+
         if ($product->image) {
             Storage::disk('public')->delete($product->image);
         }
 
         $product->delete();
+
+        Log::info('audit.product_deleted', [
+            'action' => 'product_deleted',
+            'user_id' => $request->user()?->id,
+            'product_id' => $product->id,
+            'previous_price' => $previousPrice,
+            'new_price' => null,
+            'occurred_at' => now()->toDateTimeString(),
+        ]);
 
         return redirect()->route('products.index');
     }

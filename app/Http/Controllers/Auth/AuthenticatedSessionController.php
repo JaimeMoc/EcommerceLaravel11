@@ -7,6 +7,7 @@ use App\Http\Requests\Auth\LoginRequest;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 use Inertia\Response;
@@ -32,6 +33,13 @@ class AuthenticatedSessionController extends Controller
         $request->authenticate();
 
         $request->session()->regenerate();
+
+        Log::info('audit.user_login', [
+            'action' => 'user_login',
+            'user_id' => Auth::id(),
+            'resource_id' => Auth::id(),
+            'occurred_at' => now()->toDateTimeString(),
+        ]);
 
         return redirect()->intended(route('dashboard', absolute: false));
     }

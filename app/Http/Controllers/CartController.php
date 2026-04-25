@@ -62,15 +62,4 @@ class CartController extends Controller
 
         return redirect()->back()->with('error', 'El producto no existe en el carrito.');
     }
-
-    public function checkout(): RedirectResponse
-    {
-        if (empty(session()->get('cart', []))) {
-            return redirect()->route('cart.index')->with('error', 'El carrito está vacío.');
-        }
-
-        session()->forget('cart');
-
-        return redirect()->route('cart.index')->with('success', 'Compra realizada con éxito.');
-    }
 }
